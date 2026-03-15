@@ -3,8 +3,10 @@ module github.com/Compogo/gocache
 go 1.26.1
 
 require (
-	github.com/Compogo/cache v0.0.1 // indirect
-	github.com/Compogo/compogo v0.0.20 // indirect
+	github.com/Compogo/cache v0.0.2 // indirect
+	github.com/Compogo/compogo v0.0.23 // indirect
+	github.com/Compogo/tools v0.0.1 // indirect
+	github.com/Compogo/types v0.0.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/eko/gocache/lib/v4 v4.2.3 // indirect
