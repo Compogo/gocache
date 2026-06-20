@@ -2,36 +2,33 @@ package registration
 
 import (
 	"github.com/Compogo/cache"
-	"github.com/Compogo/compogo/component"
-	"github.com/Compogo/compogo/container"
+	"github.com/Compogo/compogo"
 	"github.com/Compogo/gocache"
 	"github.com/eko/gocache/lib/v4/store"
 	"github.com/eko/gocache/store/go_cache/v4"
 )
 
-// Component is a ready-to-use Compogo component that registers the in-memory cache
-// driver with the central cache system.
+// Component — компонент регистрации in-memory драйвера для gocache.
+// Регистрирует драйвер "memory" в системе кэширования.
 //
-// It depends on gocache.Component to ensure the underlying in-memory cache is
-// initialized. The actual registration happens in init(), which is safe because
-// cache.Registration only stores factory functions without requiring runtime state.
-var Component = &component.Component{
-	Dependencies: component.Components{
-		gocache.Component,
+// После подключения этого компонента, пакет cache сможет использовать
+// in-memory хранилище как бекенд для кэширования.
+//
+// Пример:
+//
+//	app.AddComponents(
+//	    &registration.Component, // регистрация драйвера для cache
+//	)
+var Component = compogo.Component{
+	Dependencies: compogo.Components{
+		&gocache.Component,
 	},
 }
 
-// init registers the "memory" cache driver with the central cache system.
-// The registration happens at program startup, independent of component lifecycle.
-//
-// The factory function receives a container and:
-//   - Extracts the cache configuration (*cache.Config) and the gocache client
-//   - Creates a gocache.Store (compatible with store.StoreInterface)
-//   - Returns it to the cache system for wrapping with metrics
-//
-// This driver can be selected with --cache.driver=memory.
+// Регистрация драйвера "memory" в системе cache.
+// Использует gocache.Cache как источник данных.
 func init() {
-	cache.Registration("memory", func(container container.Container) (store.StoreInterface, error) {
+	cache.Registration("memory", func(container compogo.Container) (store.StoreInterface, error) {
 		var cacheStore store.StoreInterface
 		var err error
 

@@ -3,27 +3,39 @@ package gocache
 import (
 	"time"
 
-	"github.com/Compogo/compogo/configurator"
+	"github.com/Compogo/compogo"
 )
 
 const (
-	ExpirationFieldName      = "cache.memory.expiration"
-	CleanupIntervalFieldName = "cache.memory.cleanup"
+	// ExpirationFieldName время жизни данных
+	ExpirationFieldName = "cache.memory.expiration"
 
-	ExpirationDefault      = 5 * time.Minute
+	// CleanupIntervalFieldName интервал очистки просроченных данных
+	CleanupIntervalFieldName = "cache.memory.cleanup"
+)
+
+var (
+	// ExpirationDefault время жизни по умолчанию
+	ExpirationDefault = 5 * time.Minute
+
+	// CleanupIntervalDefault интервал очистки по умолчанию
 	CleanupIntervalDefault = 10 * time.Minute
 )
 
+// Config содержит конфигурацию in-memory кэша.
 type Config struct {
 	Expiration      time.Duration
 	CleanupInterval time.Duration
 }
 
+// NewConfig создаёт новую конфигурацию.
 func NewConfig() *Config {
 	return &Config{}
 }
 
-func Configuration(config *Config, configurator configurator.Configurator) *Config {
+// Configuration загружает конфигурацию из Configurator.
+// Если значения не заданы, устанавливаются значения по умолчанию.
+func Configuration(config *Config, configurator compogo.Configurator) *Config {
 	if config.Expiration == 0 || config.Expiration == ExpirationDefault {
 		configurator.SetDefault(ExpirationFieldName, ExpirationDefault)
 		config.Expiration = configurator.GetDuration(ExpirationFieldName)

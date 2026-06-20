@@ -1,131 +1,78 @@
-# Compogo GoCache 🗃️
+# Compogo GoCache
 
-**Compogo GoCache** — это in-memory кэш для Compogo, построенный поверх популярной библиотеки [patrickmn/go-cache](https://github.com/patrickmn/go-cache). Предоставляет полный API оригинальной библиотеки, настраивается через флаги и может использоваться как самостоятельный кэш или как драйвер для централизованной системы кэширования [Compogo Cache](https://github.com/Compogo/cache).
+In-memory кэш для фреймворка [Compogo](https://github.com/Compogo/compogo).
 
-## 🚀 Установка
+На основе [patrickmn/go-cache](https://github.com/patrickmn/go-cache) предоставляет:
 
-```bash
+* Хранение данных в памяти приложения
+* Автоматическую очистку просроченных данных
+* Инкременты и декременты числовых значений
+* Сохранение/загрузку кэша в файл
+* Колбэк при удалении данных
+
+## Установка
+
+```shell
 go get github.com/Compogo/gocache
 ```
 
-### 📦 Быстрый старт
+## Конфигурация
+
+### Флаги командной строки
+
+```shell
+# Время жизни данных по умолчанию
+--cache.memory.expiration=5m
+
+# Интервал очистки просроченных данных
+--cache.memory.cleanup=10m
+```
+
+## Интеграция с [Compogo Cache](https://github.com/Compogo/cache)
+
+Этот пакет также регистрирует драйвер `memory` в системе кэширования [Compogo Cache](https://github.com/Compogo/cache):
 
 ```go
-package main
-
 import (
-    "github.com/Compogo/compogo"
-    "github.com/Compogo/gocache"
+    "github.com/Compogo/gocache/registration"
 )
 
 func main() {
     app := compogo.NewApp("myapp",
-        compogo.WithOsSignalCloser(),
-        gocache.Component,  // добавляем in-memory кэш
-        compogo.WithComponents(
-            userServiceComponent,
-        ),
+        compogo.WithComponents(&registration.Component),
     )
-
-    if err := app.Serve(); err != nil {
-        panic(err)
-    }
-}
-
-// Использование в сервисе
-var userServiceComponent = &component.Component{
-    Dependencies: component.Components{gocache.Component},
-    Execute: component.StepFunc(func(c container.Container) error {
-        return c.Invoke(func(cache gocache.Cache) {
-            service := &UserService{cache: cache}
-            service.Start()
-        })
-    }),
-}
-
-type UserService struct {
-    cache gocache.Cache
-}
-
-func (s *UserService) GetUser(id int) (*User, error) {
-    // Пытаемся достать из кэша
-    if data, found := s.cache.Get(fmt.Sprintf("user:%d", id)); found {
-        return data.(*User), nil
-    }
-    
-    // Нет в кэше — грузим из БД
-    user, err := s.db.LoadUser(id)
-    if err != nil {
-        return nil, err
-    }
-    
-    // Кладём в кэш
-    s.cache.Set(fmt.Sprintf("user:%d", id), user, cache.DefaultExpiration)
-    
-    return user, nil
+    // Теперь cache.NewCache() использует in-memory хранилище
 }
 ```
 
-### ✨ Возможности
+## Зависимости
 
-#### 🎯 Полный API go-cache
+* [Compogo Cache](https://github.com/Compogo/cache) — основной фреймворк
+* [patrickmn/go-cache](https://github.com/patrickmn/go-cache) — библиотека in-memory кэша
 
-Интерфейс `Cache` повторяет все методы оригинальной библиотеки:
+## Лицензия
 
-```go
-// Базовые операции
-cache.Set("key", value, 5*time.Minute)
-value, found := cache.Get("key")
-cache.Delete("key")
+```plantuml
+MIT License
 
-// Атомарные инкременты для всех типов
-cache.IncrementInt("counter", 1)
-cache.DecrementFloat64("metric", 0.5)
+Copyright (c) 2026 Compogo
 
-// Работа с expiration
-value, expTime, found := cache.GetWithExpiration("key")
-cache.SetDefault("key", value) // использует TTL по умолчанию
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-// Очистка
-cache.DeleteExpired()
-cache.Flush()
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-// Персистентность
-cache.SaveFile("cache.backup")
-cache.LoadFile("cache.backup")
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-// Обработка событий
-cache.OnEvicted(func(key string, value interface{}) {
-    log.Printf("evicted: %s", key)
-})
-```
-
-#### 🔌 Два способа использования
-
-##### Как самостоятельный кэш:
-
-```go
-type Service struct {
-    cache gocache.Cache  // через интерфейс
-    // или
-    raw *goCache.Cache    // напрямую
-}
-```
-
-##### Как драйвер для централизованной системы кэширования:
-
-```go
-import (
-    "github.com/Compogo/cache"
-    "github.com/Compogo/gocache/registration"
-)
-
-app := compogo.NewApp("myapp",
-    cache.Component,
-    gocache.Component,
-    registration.Component,  // регистрирует "memory" драйвер
-)
-
-// Теперь можно использовать через cache.CacheInterface[[]byte]
-// с флагом --cache.driver=memory
 ```

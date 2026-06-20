@@ -1,40 +1,35 @@
 package gocache
 
 import (
-	"github.com/Compogo/compogo/component"
-	"github.com/Compogo/compogo/container"
+	"github.com/Compogo/compogo"
 	"github.com/Compogo/compogo/flag"
 	goCache "github.com/patrickmn/go-cache"
 )
 
-// Component is a ready-to-use Compogo component that provides an in-memory cache.
-// It automatically:
-//   - Registers Config and Cache in the DI container
-//   - Adds command-line flags for expiration and cleanup interval
-//   - Configures the cache during Configuration phase
-//   - Provides the cache as both *goCache.Cache and Cache interface
+// Component — компонент in-memory кэша для Compogo.
+// Регистрирует конфигурацию и экземпляр кэша в DI-контейнере.
 //
-// Usage:
+// Кэш хранится в памяти приложения и подходит для:
+//   - Кэширования небольших объёмов данных
+//   - Временного хранения сессий
+//   - Кэширования результатов вычислений
 //
-//	compogo.WithComponents(
-//	    gocache.Component,
-//	    // ... your service components
-//	)
+// Пример:
 //
-// Then in your service:
+//	app.AddComponents(&gocache.Component)
 //
-//	type Service struct {
-//	    cache gocache.Cache  // or *goCache.Cache
-//	}
-var Component = &component.Component{
-	Init: component.StepFunc(func(container container.Container) error {
+//	var c gocache.Cache
+//	container.Invoke(func(cache gocache.Cache) { c = cache })
+//	c.Set("key", "value", time.Minute)
+var Component = compogo.Component{
+	Init: compogo.StepFunc(func(container compogo.Container) error {
 		return container.Provides(
 			NewConfig,
 			NewCache,
 			func(cache *goCache.Cache) Cache { return cache },
 		)
 	}),
-	BindFlags: component.BindFlags(func(flagSet flag.FlagSet, container container.Container) error {
+	BindFlags: compogo.BindFlags(func(flagSet flag.FlagSet, container compogo.Container) error {
 		return container.Invoke(func(config *Config) {
 			flagSet.DurationVar(
 				&config.Expiration,
@@ -51,7 +46,7 @@ var Component = &component.Component{
 			)
 		})
 	}),
-	Configuration: component.StepFunc(func(container container.Container) error {
+	Configuration: compogo.StepFunc(func(container compogo.Container) error {
 		return container.Invoke(Configuration)
 	}),
 }
